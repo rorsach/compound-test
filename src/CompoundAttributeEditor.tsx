@@ -50,7 +50,6 @@ export default class CompoundAttributeEditor extends React.Component<
                         (item) => item.id !== attribute.id
                       )}
                       id={attribute.id}
-                      debug
                       getOptionLabel={(option) => option.name}
                       getOptionSelected={(option, attribute) =>
                         option.id === attribute.id
@@ -63,6 +62,7 @@ export default class CompoundAttributeEditor extends React.Component<
                           margin="normal"
                         />
                       )}
+                      onChange={this.handleChangePrimaryProvider(attribute)}
                     />
                     <ListItemSecondaryAction>
                       <IconButton edge="end" aria-label="delete">
@@ -71,6 +71,7 @@ export default class CompoundAttributeEditor extends React.Component<
                     </ListItemSecondaryAction>
                   </ListItem>
                   <div>
+                    {/* START Secondary Attributes Display */}
                     <List className="compound-secondary">
                       {attribute.secondaryAttributes!.map((secondary) => {
                         return (
@@ -101,6 +102,7 @@ export default class CompoundAttributeEditor extends React.Component<
                         );
                       })}
                     </List>
+                    {/* END Secondary Attributes Display */}
                   </div>
                 </React.Fragment>
               );
@@ -111,15 +113,24 @@ export default class CompoundAttributeEditor extends React.Component<
     );
   }
 
-  handleSelectPrimary() {
+  handleChangePrimaryProvider = (attribute: AttributeListing) => (
+    event: React.ChangeEvent<{}>,
+    value: AttributeListing | null
+  ) => {
     // create a new empty auto complete
     // add a secondary array to this attribute
-  }
+    console.log("changed:", value);
+  };
 
   handleSelectSecondary() {}
 
-  filterPrimaryfromAttributes(): AttributeListing[] {
-    return [];
+  excludeArrayBfromArrayA(
+    a: AttributeListing[],
+    b: AttributeListing[]
+  ): AttributeListing[] {
+    return a.filter((itemA) => {
+      return !b.some((itemB) => itemA.id === itemB.id);
+    });
   }
 }
 
