@@ -1,0 +1,21 @@
+.App {
+  font-family: sans-serif;
+}
+
+.compoundAttributeEditor-secondary {
+  padding-left: 24px;
+  background: #99ccff;
+}
+
+.compoundAttributeEditor-secondary-empty {
+  padding-left: 24px;
+  background: #eee;
+}
+
+.compoundAttributeEditor-primary {
+  background: #99cc00;
+}
+
+.compoundAttributeEditor-primary-empty {
+  background: #99cc00;
+}

@@ -1,8 +1,6 @@
 import * as React from "react";
 import CompoundAttributeEditor from "./CompoundAttributeEditor";
 
-import "./styles.css";
-
 export default function App() {
   let attributes = [
     {

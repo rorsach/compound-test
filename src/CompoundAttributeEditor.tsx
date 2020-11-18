@@ -1,4 +1,5 @@
 import {
+  Box,
   Card,
   CardContent,
   CardHeader,
@@ -11,6 +12,8 @@ import {
 import DeleteIcon from "@material-ui/icons/Delete";
 import { Autocomplete } from "@material-ui/lab";
 import * as React from "react";
+
+import "./CompoundAttributeEditor.css";
 
 export default class CompoundAttributeEditor extends React.Component<
   CompoundAttributeEditorProps,
@@ -34,16 +37,22 @@ export default class CompoundAttributeEditor extends React.Component<
       (attribute) =>
         attribute.secondaryAttributes && attribute.secondaryAttributes.length
     );
+    const nonPrimaryAttributes: AttributeListing[] = attributes.filter(
+      (attribute) => !attribute.secondaryAttributes
+    );
     console.log(primaryAttributes);
     return (
       <Card>
-        <CardHeader title="Compound Outputs" />
+        <CardHeader
+          title="Compound Outputs"
+          subheader="Pick a primary attribute and then secondary attributes to associate with it."
+        />
         <CardContent>
-          <List className="compound-primary">
+          <List>
             {primaryAttributes.map((attribute) => {
               return (
                 <React.Fragment>
-                  <ListItem>
+                  <ListItem className="compoundAttributeEditor-primary">
                     <Autocomplete
                       fullWidth
                       options={primaryAttributes.filter(
@@ -60,9 +69,10 @@ export default class CompoundAttributeEditor extends React.Component<
                           {...params}
                           label="Primary"
                           margin="normal"
+                          InputLabelProps={{ shrink: true }}
                         />
                       )}
-                      onChange={this.handleChangePrimaryProvider(attribute)}
+                      onChange={this.handleChangePrimaryProvider()}
                     />
                     <ListItemSecondaryAction>
                       <IconButton edge="end" aria-label="delete">
@@ -70,12 +80,12 @@ export default class CompoundAttributeEditor extends React.Component<
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
-                  <div>
-                    {/* START Secondary Attributes Display */}
-                    <List className="compound-secondary">
+                  {/* START Secondary Attributes Display */}
+                  <Box pb={1}>
+                    <List disablePadding>
                       {attribute.secondaryAttributes!.map((secondary) => {
                         return (
-                          <ListItem>
+                          <ListItem className="compoundAttributeEditor-secondary">
                             <Autocomplete
                               fullWidth
                               options={primaryAttributes}
@@ -90,6 +100,7 @@ export default class CompoundAttributeEditor extends React.Component<
                                   {...params}
                                   label="Secondary"
                                   margin="normal"
+                                  InputLabelProps={{ shrink: true }}
                                 />
                               )}
                             />
@@ -101,19 +112,55 @@ export default class CompoundAttributeEditor extends React.Component<
                           </ListItem>
                         );
                       })}
+                      <ListItem className="compoundAttributeEditor-secondary-empty">
+                        <Autocomplete
+                          fullWidth
+                          options={nonPrimaryAttributes}
+                          getOptionLabel={(option) => option.name}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Secondary"
+                              margin="normal"
+                              InputLabelProps={{ shrink: true }}
+                            />
+                          )}
+                        />
+                      </ListItem>
                     </List>
-                    {/* END Secondary Attributes Display */}
-                  </div>
+                  </Box>
+                  {/* END Secondary Attributes Display */}
                 </React.Fragment>
               );
             })}
+            {/* START new Primary item */}
+            <ListItem className="compoundAttributeEditor-primary-empty">
+              <Autocomplete
+                fullWidth
+                options={nonPrimaryAttributes}
+                getOptionLabel={(option) => option.name}
+                getOptionSelected={(option, attribute) =>
+                  option.id === attribute.id
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Primary"
+                    margin="normal"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+                onChange={this.handleChangePrimaryProvider()}
+              />
+            </ListItem>
+            {/* END new Primary item */}
           </List>
         </CardContent>
       </Card>
     );
   }
 
-  handleChangePrimaryProvider = (attribute: AttributeListing) => (
+  handleChangePrimaryProvider = () => (
     event: React.ChangeEvent<{}>,
     value: AttributeListing | null
   ) => {
