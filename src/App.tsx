@@ -21,22 +21,21 @@ export default function App() {
       id: "4567",
       name: "attribute four",
       secondaryAttributes: [
-        { id: "5678", name: "secondary one" },
-        { id: "6789", name: "secondary two" }
+        { id: "5678", name: "secondary abc" },
+        { id: "6789", name: "secondary def" }
       ]
     },
     {
       id: "7890",
       name: "attribute five",
       secondaryAttributes: [
-        { id: "5678", name: "secondary one" },
-        { id: "6789", name: "secondary two" }
+        { id: "5678", name: "secondary abc" },
+        { id: "0123", name: "secondary xyz" }
       ]
     }
   ];
   return (
     <div className="App">
-      <h1>Compound Attributes</h1>
       <CompoundAttributeEditor attributes={attributes} />
     </div>
   );

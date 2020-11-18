@@ -1,10 +1,14 @@
 import {
   Card,
   CardContent,
+  CardHeader,
+  IconButton,
   List,
   ListItem,
+  ListItemSecondaryAction,
   TextField
 } from "@material-ui/core";
+import DeleteIcon from "@material-ui/icons/Delete";
 import { Autocomplete } from "@material-ui/lab";
 import * as React from "react";
 
@@ -19,75 +23,103 @@ export default class CompoundAttributeEditor extends React.Component<
     };
   }
 
-  // Add logic to create new empties?
-  // Add logic to remove primary attributes from secondary list
-  // Add logic to store new selections in the secondary attributes array
+  // handleSelectPrimary
+  // filterPrimaryfromAttributes(): AttributeListing
+  // handleSelectSecondary
+  // DeleteHandler
 
   render() {
     const { attributes } = this.props;
+    const primaryAttributes: AttributeListing[] = attributes.filter(
+      (attribute) =>
+        attribute.secondaryAttributes && attribute.secondaryAttributes.length
+    );
+    console.log(primaryAttributes);
     return (
       <Card>
+        <CardHeader title="Compound Outputs" />
         <CardContent>
           <List className="compound-primary">
-            {attributes.map((attribute) => {
-              if (
-                attribute.secondaryAttributes &&
-                attribute.secondaryAttributes.length
-              ) {
-                return (
-                  <React.Fragment>
-                    <ListItem>
-                      <Autocomplete
-                        fullWidth
-                        options={attributes}
-                        id="debug"
-                        debug
-                        getOptionLabel={(option) => option.name}
-                        value={attribute}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Primary"
-                            margin="normal"
-                          />
-                        )}
-                      />
-                    </ListItem>
-                    <div>
-                      <List className="compound-secondary">
-                        {attribute.secondaryAttributes.map((secondary) => {
-                          return (
-                            <ListItem>
-                              <Autocomplete
-                                fullWidth
-                                options={attributes}
-                                id={secondary.id}
-                                debug
-                                getOptionLabel={(option) => option.name}
-                                value={secondary}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    label="Secondary"
-                                    margin="normal"
-                                  />
-                                )}
-                              />
-                            </ListItem>
-                          );
-                        })}
-                      </List>
-                    </div>
-                  </React.Fragment>
-                );
-              } else {
-                return null;
-              }
+            {primaryAttributes.map((attribute) => {
+              return (
+                <React.Fragment>
+                  <ListItem>
+                    <Autocomplete
+                      fullWidth
+                      options={primaryAttributes.filter(
+                        (item) => item.id !== attribute.id
+                      )}
+                      id={attribute.id}
+                      debug
+                      getOptionLabel={(option) => option.name}
+                      getOptionSelected={(option, attribute) =>
+                        option.id === attribute.id
+                      }
+                      value={attribute}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Primary"
+                          margin="normal"
+                        />
+                      )}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton edge="end" aria-label="delete">
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  <div>
+                    <List className="compound-secondary">
+                      {attribute.secondaryAttributes!.map((secondary) => {
+                        return (
+                          <ListItem>
+                            <Autocomplete
+                              fullWidth
+                              options={primaryAttributes}
+                              id={secondary.id}
+                              getOptionLabel={(option) => option.name}
+                              getOptionSelected={(option, secondary) =>
+                                option.id === secondary.id
+                              }
+                              value={secondary}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Secondary"
+                                  margin="normal"
+                                />
+                              )}
+                            />
+                            <ListItemSecondaryAction>
+                              <IconButton edge="end" aria-label="delete">
+                                <DeleteIcon />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </div>
+                </React.Fragment>
+              );
             })}
           </List>
         </CardContent>
       </Card>
     );
+  }
+
+  handleSelectPrimary() {
+    // create a new empty auto complete
+    // add a secondary array to this attribute
+  }
+
+  handleSelectSecondary() {}
+
+  filterPrimaryfromAttributes(): AttributeListing[] {
+    return [];
   }
 }
 
