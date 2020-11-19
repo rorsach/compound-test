@@ -7,7 +7,7 @@ import {
 export default class App extends React.Component<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
-    this.state = {
+    const initialState = {
       attributes: [
         { id: "0123", name: "secondary xyz" },
         {
@@ -42,13 +42,21 @@ export default class App extends React.Component<AppProps, AppState> {
         }
       ]
     };
+
+    this.state = {
+      initialAttributes: JSON.parse(JSON.stringify(initialState.attributes)),
+      attributes: JSON.parse(JSON.stringify(initialState.attributes)),
+      key: Math.random()
+    };
   }
 
   render() {
     return (
       <div className="App">
         <CompoundAttributeEditor
+          initialAttributes={this.state.initialAttributes}
           attributes={this.state.attributes}
+          key={this.state.key}
           handleUpdateCompoundAttribute={this.handleUpdateCompoundAttribute}
         />
       </div>
@@ -56,13 +64,18 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   handleUpdateCompoundAttribute = (attributes: AttributeListing[]) => {
-    console.log("handle attribute change:", attributes);
-    this.setState({ attributes: attributes });
+    // console.log(
+    //   "handle attribute change:",
+    //   JSON.stringify(attributes, null, 2)
+    // );
+    this.setState({ attributes: attributes, key: Math.random() });
   };
 }
 
 interface AppProps {}
 
 interface AppState {
+  initialAttributes: AttributeListing[];
   attributes: AttributeListing[];
+  key: number;
 }

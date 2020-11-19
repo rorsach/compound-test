@@ -35,25 +35,12 @@ export class CompoundAttributeEditor extends React.Component<
     const { attributes } = this.state;
 
     const primaryAttributes: AttributeListing[] = attributes.filter(
-      (attribute) =>
-        attribute.secondaryAttributes && attribute.secondaryAttributes.length
+      (attribute) => attribute.secondaryAttributes
     );
     const nonPrimaryAttributes: AttributeListing[] = attributes.filter(
       (attribute) => !attribute.secondaryAttributes
     );
 
-    console.log(nonPrimaryAttributes);
-    const seecondaryAttributes: AttributeListing[] = primaryAttributes.reduce(
-      (acc: AttributeListing[], item) => {
-        if (item.secondaryAttributes && item.secondaryAttributes.length) {
-          return acc.concat(item.secondaryAttributes);
-        }
-        return acc;
-      },
-      []
-    );
-
-    console.log(primaryAttributes);
     return (
       <Card>
         <CardHeader
@@ -61,17 +48,58 @@ export class CompoundAttributeEditor extends React.Component<
           subheader="Pick a primary attribute and then secondary attributes to associate with it."
         />
         <CardContent>
-          <List>
+          <List className="compoundAttributeEditor-mainList">
+            {/* START new Primary item */}
+            <Box pb={3}>
+              <ListItem
+                className="compoundAttributeEditor-primary-empty"
+                dense={true}
+              >
+                <Autocomplete
+                  fullWidth
+                  disableClearable
+                  options={nonPrimaryAttributes}
+                  getOptionLabel={(option) => option.name}
+                  getOptionSelected={(option, attribute) =>
+                    option.id === attribute.id
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Primary"
+                      margin="normal"
+                      helperText="Make a selection to add a new primary attribute"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  )}
+                  onChange={this.handleChangePrimaryEmpty}
+                />
+              </ListItem>
+            </Box>
+            {/* END new Primary item */}
             {primaryAttributes.map((primary) => {
               return (
-                <React.Fragment>
-                  <ListItem className="compoundAttributeEditor-primary">
+                <Box key={primary.id} mb={1}>
+                  {/* START Primary Attribute Display */}
+                  <ListItem
+                    className="compoundAttributeEditor-primary"
+                    dense={true}
+                  >
                     <Autocomplete
+                      className="compoundAttributeEditor-primarySelect"
+                      disableClearable
                       fullWidth
-                      options={primaryAttributes.filter(
-                        (item) => item.id !== primary.id
-                      )}
+                      options={
+                        this.isPrimaryNew(primary)
+                          ? [primary]
+                          : [primary, ...nonPrimaryAttributes]
+                      }
+                      disabled={
+                        primary.secondaryAttributes &&
+                        primary.secondaryAttributes.length !== 0
+                      }
                       id={primary.id}
+                      key={primary.id}
                       getOptionLabel={(option) => option.name}
                       getOptionSelected={(option, attribute) =>
                         option.id === attribute.id
@@ -85,112 +113,184 @@ export class CompoundAttributeEditor extends React.Component<
                           InputLabelProps={{ shrink: true }}
                         />
                       )}
-                      onChange={this.handleChangePrimaryProvider()}
+                      onChange={this.handleChangePrimaryProvider(primary)}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" aria-label="delete">
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        disabled={this.isPrimaryNew(primary)}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
+                  {/* END Primary Attribute Display */}
                   {/* START Secondary Attributes Display */}
-                  <Box pb={1}>
-                    <List disablePadding>
-                      {primary.secondaryAttributes!.map((secondary) => {
-                        return (
-                          <ListItem className="compoundAttributeEditor-secondary">
-                            <Autocomplete
-                              fullWidth
-                              options={nonPrimaryAttributes}
-                              id={secondary.id}
-                              getOptionLabel={(option) => option.name}
-                              getOptionSelected={(option, secondary) => {
-                                return option.id === secondary.id;
-                              }}
-                              value={secondary}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Secondary"
-                                  margin="normal"
-                                  InputLabelProps={{ shrink: true }}
-                                />
-                              )}
-                              onChange={this.handleChangeSecondaryProvider(
-                                primary,
-                                secondary
-                              )}
-                            />
-                            <ListItemSecondaryAction>
-                              <IconButton edge="end" aria-label="delete">
-                                <DeleteIcon />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </ListItem>
-                        );
-                      })}
-                      {/* START new Secondary item */}
-                      <ListItem className="compoundAttributeEditor-secondary-empty">
-                        <Autocomplete
-                          fullWidth
-                          options={nonPrimaryAttributes}
-                          getOptionLabel={(option) => option.name}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Secondary"
-                              margin="normal"
-                              InputLabelProps={{ shrink: true }}
-                            />
-                          )}
-                          onChange={this.handleChangeSecondaryEmoptyProvider(
-                            primary
-                          )}
-                        />
-                      </ListItem>
-                      {/* END new Secondary item */}
-                    </List>
-                  </Box>
+                  <List disablePadding>
+                    {/* START new Secondary item */}
+                    <ListItem
+                      className="compoundAttributeEditor-secondary-empty"
+                      dense={true}
+                    >
+                      <Autocomplete
+                        fullWidth
+                        disableClearable
+                        options={nonPrimaryAttributes.filter(
+                          (item) =>
+                            !this.isSecondaryContainedInPrimary(primary, item)
+                        )}
+                        getOptionLabel={(option) => option.name}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Secondary"
+                            margin="normal"
+                            helperText="Make a selection to add a new secondary attribute"
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        )}
+                        onChange={this.handleChangeSecondaryEmoptyProvider(
+                          primary
+                        )}
+                      />
+                    </ListItem>
+                    {/* END new Secondary item */}
+                    {primary.secondaryAttributes!.map((secondary) => {
+                      return (
+                        <ListItem
+                          key={secondary.id}
+                          className="compoundAttributeEditor-secondary"
+                          dense={true}
+                        >
+                          <Autocomplete
+                            fullWidth
+                            disableClearable
+                            disabled={!this.isSecondaryNew(primary, secondary)}
+                            options={nonPrimaryAttributes}
+                            id={secondary.id}
+                            getOptionLabel={(option) => option.name}
+                            getOptionSelected={(option, secondary) => {
+                              return option.id === secondary.id;
+                            }}
+                            value={secondary}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Secondary"
+                                margin="normal"
+                                InputLabelProps={{ shrink: true }}
+                              />
+                            )}
+                            onChange={this.handleChangeSecondaryProvider(
+                              primary,
+                              secondary
+                            )}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton
+                              edge="end"
+                              aria-label="delete"
+                              disabled={
+                                !this.isSecondaryNew(primary, secondary)
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
                   {/* END Secondary Attributes Display */}
-                </React.Fragment>
+                </Box>
               );
             })}
-            {/* START new Primary item */}
-            <ListItem className="compoundAttributeEditor-primary-empty">
-              <Autocomplete
-                fullWidth
-                options={nonPrimaryAttributes}
-                getOptionLabel={(option) => option.name}
-                getOptionSelected={(option, attribute) =>
-                  option.id === attribute.id
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Primary"
-                    margin="normal"
-                    InputLabelProps={{ shrink: true }}
-                  />
-                )}
-                onChange={this.handleChangePrimaryProvider()}
-              />
-            </ListItem>
-            {/* END new Primary item */}
           </List>
         </CardContent>
       </Card>
     );
   }
 
-  handleDeleteAttributeProvider = () => () => {};
+  isPrimaryNew(primary: AttributeListing): boolean {
+    const initialPrimaryAttributes: AttributeListing[] = this.props.initialAttributes.filter(
+      (attribute) => attribute.secondaryAttributes
+    );
+    const primaryIndex: number = initialPrimaryAttributes.findIndex(
+      (item) => item.id === primary.id
+    );
+    return primaryIndex > -1;
+  }
 
-  handleChangePrimaryProvider = () => (
+  isSecondaryContainedInPrimary(
+    primary: AttributeListing,
+    secondary: AttributeListing
+  ): boolean {
+    return !!primary?.secondaryAttributes?.some(
+      (item) => item.id === secondary.id
+    );
+  }
+
+  isSecondaryNew(
+    primary: AttributeListing,
+    secondary: AttributeListing
+  ): boolean {
+    const primaryIndex = this.props.initialAttributes.findIndex(
+      (item) => item.id === primary.id
+    );
+
+    const initialPrimary = this.props.initialAttributes[primaryIndex];
+
+    if (initialPrimary && initialPrimary.secondaryAttributes) {
+      return !initialPrimary.secondaryAttributes.some(
+        (item) => item.id === secondary.id
+      );
+    }
+
+    return true;
+  }
+
+  handleDeleteAttributeProvider = () => (
+    event: React.ChangeEvent<{}>,
+    value: AttributeListing | null
+  ) => {};
+
+  handleChangePrimaryProvider = (primary: AttributeListing) => (
     event: React.ChangeEvent<{}>,
     value: AttributeListing | null
   ) => {
-    // create a new empty auto complete
-    // add a secondary array to this attribute
-    console.log("Primary Changed:", event, value);
+    if (!value) {
+      return;
+    }
+
+    const attributes: AttributeListing[] = JSON.parse(
+      JSON.stringify(this.state.attributes)
+    );
+    const primaryIndex = attributes.findIndex((item) => item.id === primary.id);
+    const primaryToUpdate =
+      primaryIndex > -1 ? attributes[primaryIndex] : undefined;
+
+    if (primaryToUpdate) {
+      value.secondaryAttributes = primaryToUpdate.secondaryAttributes;
+      attributes[primaryIndex] = value;
+      delete primaryToUpdate.secondaryAttributes;
+      this.props.handleUpdateCompoundAttribute(attributes);
+    }
+  };
+
+  handleChangePrimaryEmpty = (
+    event: React.ChangeEvent<{}>,
+    value: AttributeListing
+  ) => {
+    const attributes: AttributeListing[] = JSON.parse(
+      JSON.stringify(this.state.attributes)
+    );
+
+    value.secondaryAttributes = [];
+    const indexToUpdate = attributes.findIndex((item) => item.id === value.id);
+    attributes[indexToUpdate] = value;
+
+    this.props.handleUpdateCompoundAttribute(attributes);
   };
 
   handleChangeSecondaryProvider = (
@@ -200,7 +300,7 @@ export class CompoundAttributeEditor extends React.Component<
     if (!value) {
       return;
     }
-    console.log("Secondary Changed", primary, secondary, value);
+
     const attributes: AttributeListing[] = JSON.parse(
       JSON.stringify(this.state.attributes)
     );
@@ -211,6 +311,7 @@ export class CompoundAttributeEditor extends React.Component<
         (item) => item.id === secondary.id
       );
       primaryToUpdate.secondaryAttributes[secondaryIndex] = value;
+      this.props.handleUpdateCompoundAttribute(attributes);
     }
   };
 
@@ -231,9 +332,17 @@ export class CompoundAttributeEditor extends React.Component<
       } else {
         primaryToUpdate.secondaryAttributes = [value];
       }
+      this.props.handleUpdateCompoundAttribute(attributes);
     }
-    console.log(attributes);
   };
+
+  isNewPrimaryAttribute(attribute: AttributeListing): boolean {
+    if (this.props.initialAttributes.find((item) => item.id === attribute.id)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   excludeArrayBfromArrayA(
     a: AttributeListing[],
@@ -246,6 +355,7 @@ export class CompoundAttributeEditor extends React.Component<
 }
 
 interface CompoundAttributeEditorProps {
+  initialAttributes: AttributeListing[];
   attributes: AttributeListing[];
   handleUpdateCompoundAttribute: (attributes: AttributeListing[]) => void;
 }
