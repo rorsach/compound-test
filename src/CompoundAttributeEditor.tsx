@@ -15,14 +15,14 @@ import * as React from "react";
 
 import "./CompoundAttributeEditor.css";
 
-export default class CompoundAttributeEditor extends React.Component<
+export class CompoundAttributeEditor extends React.Component<
   CompoundAttributeEditorProps,
   CompoundAttributeEditorState
 > {
   constructor(props: CompoundAttributeEditorProps) {
     super(props);
     this.state = {
-      availableAttributes: this.props.attributes.concat()
+      attributes: JSON.parse(JSON.stringify(this.props.attributes))
     };
   }
 
@@ -32,7 +32,8 @@ export default class CompoundAttributeEditor extends React.Component<
   // DeleteHandler
 
   render() {
-    const { attributes } = this.props;
+    const { attributes } = this.state;
+
     const primaryAttributes: AttributeListing[] = attributes.filter(
       (attribute) =>
         attribute.secondaryAttributes && attribute.secondaryAttributes.length
@@ -40,6 +41,18 @@ export default class CompoundAttributeEditor extends React.Component<
     const nonPrimaryAttributes: AttributeListing[] = attributes.filter(
       (attribute) => !attribute.secondaryAttributes
     );
+
+    console.log(nonPrimaryAttributes);
+    const seecondaryAttributes: AttributeListing[] = primaryAttributes.reduce(
+      (acc: AttributeListing[], item) => {
+        if (item.secondaryAttributes && item.secondaryAttributes.length) {
+          return acc.concat(item.secondaryAttributes);
+        }
+        return acc;
+      },
+      []
+    );
+
     console.log(primaryAttributes);
     return (
       <Card>
@@ -49,21 +62,21 @@ export default class CompoundAttributeEditor extends React.Component<
         />
         <CardContent>
           <List>
-            {primaryAttributes.map((attribute) => {
+            {primaryAttributes.map((primary) => {
               return (
                 <React.Fragment>
                   <ListItem className="compoundAttributeEditor-primary">
                     <Autocomplete
                       fullWidth
                       options={primaryAttributes.filter(
-                        (item) => item.id !== attribute.id
+                        (item) => item.id !== primary.id
                       )}
-                      id={attribute.id}
+                      id={primary.id}
                       getOptionLabel={(option) => option.name}
                       getOptionSelected={(option, attribute) =>
                         option.id === attribute.id
                       }
-                      value={attribute}
+                      value={primary}
                       renderInput={(params) => (
                         <TextField
                           {...params}
@@ -83,17 +96,17 @@ export default class CompoundAttributeEditor extends React.Component<
                   {/* START Secondary Attributes Display */}
                   <Box pb={1}>
                     <List disablePadding>
-                      {attribute.secondaryAttributes!.map((secondary) => {
+                      {primary.secondaryAttributes!.map((secondary) => {
                         return (
                           <ListItem className="compoundAttributeEditor-secondary">
                             <Autocomplete
                               fullWidth
-                              options={primaryAttributes}
+                              options={nonPrimaryAttributes}
                               id={secondary.id}
                               getOptionLabel={(option) => option.name}
-                              getOptionSelected={(option, secondary) =>
-                                option.id === secondary.id
-                              }
+                              getOptionSelected={(option, secondary) => {
+                                return option.id === secondary.id;
+                              }}
                               value={secondary}
                               renderInput={(params) => (
                                 <TextField
@@ -102,6 +115,10 @@ export default class CompoundAttributeEditor extends React.Component<
                                   margin="normal"
                                   InputLabelProps={{ shrink: true }}
                                 />
+                              )}
+                              onChange={this.handleChangeSecondaryProvider(
+                                primary,
+                                secondary
                               )}
                             />
                             <ListItemSecondaryAction>
@@ -112,6 +129,7 @@ export default class CompoundAttributeEditor extends React.Component<
                           </ListItem>
                         );
                       })}
+                      {/* START new Secondary item */}
                       <ListItem className="compoundAttributeEditor-secondary-empty">
                         <Autocomplete
                           fullWidth
@@ -125,8 +143,12 @@ export default class CompoundAttributeEditor extends React.Component<
                               InputLabelProps={{ shrink: true }}
                             />
                           )}
+                          onChange={this.handleChangeSecondaryEmoptyProvider(
+                            primary
+                          )}
                         />
                       </ListItem>
+                      {/* END new Secondary item */}
                     </List>
                   </Box>
                   {/* END Secondary Attributes Display */}
@@ -160,16 +182,58 @@ export default class CompoundAttributeEditor extends React.Component<
     );
   }
 
+  handleDeleteAttributeProvider = () => () => {};
+
   handleChangePrimaryProvider = () => (
     event: React.ChangeEvent<{}>,
     value: AttributeListing | null
   ) => {
     // create a new empty auto complete
     // add a secondary array to this attribute
-    console.log("changed:", value);
+    console.log("Primary Changed:", event, value);
   };
 
-  handleSelectSecondary() {}
+  handleChangeSecondaryProvider = (
+    primary: AttributeListing,
+    secondary: AttributeListing
+  ) => (event: React.ChangeEvent<{}>, value: AttributeListing | null) => {
+    if (!value) {
+      return;
+    }
+    console.log("Secondary Changed", primary, secondary, value);
+    const attributes: AttributeListing[] = JSON.parse(
+      JSON.stringify(this.state.attributes)
+    );
+    const primaryToUpdate = attributes.find((item) => item.id === primary.id);
+
+    if (primaryToUpdate && primaryToUpdate.secondaryAttributes) {
+      const secondaryIndex = primaryToUpdate.secondaryAttributes.findIndex(
+        (item) => item.id === secondary.id
+      );
+      primaryToUpdate.secondaryAttributes[secondaryIndex] = value;
+    }
+  };
+
+  handleChangeSecondaryEmoptyProvider = (primary: AttributeListing) => (
+    event: React.ChangeEvent<{}>,
+    value: AttributeListing | null
+  ) => {
+    if (!value) {
+      return;
+    }
+    const attributes: AttributeListing[] = JSON.parse(
+      JSON.stringify(this.state.attributes)
+    );
+    const primaryToUpdate = attributes.find((item) => item.id === primary.id);
+    if (primaryToUpdate) {
+      if (primaryToUpdate.secondaryAttributes) {
+        primaryToUpdate.secondaryAttributes.push(value);
+      } else {
+        primaryToUpdate.secondaryAttributes = [value];
+      }
+    }
+    console.log(attributes);
+  };
 
   excludeArrayBfromArrayA(
     a: AttributeListing[],
@@ -183,14 +247,14 @@ export default class CompoundAttributeEditor extends React.Component<
 
 interface CompoundAttributeEditorProps {
   attributes: AttributeListing[];
+  handleUpdateCompoundAttribute: (attributes: AttributeListing[]) => void;
 }
 
 interface CompoundAttributeEditorState {
-  availableAttributes: AttributeListing[];
-  primaries?: AttributeListing[];
+  attributes: AttributeListing[];
 }
 
-interface AttributeListing {
+export interface AttributeListing {
   name: string;
   id: string;
   secondaryAttributes?: AttributeListing[];
