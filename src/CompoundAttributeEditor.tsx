@@ -7,7 +7,8 @@ import {
   List,
   ListItem,
   ListItemSecondaryAction,
-  TextField
+  TextField,
+  Tooltip
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { Autocomplete } from "@material-ui/lab";
@@ -55,30 +56,8 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
         />
         <CardContent>
           <List className="compoundAttributeEditor-mainList">
-            {/* START new Primary item */}
-            <Box pb={3}>
-              <ListItem className="compoundAttributeEditor-primary-empty" dense={true}>
-                <Autocomplete
-                  fullWidth
-                  disableClearable
-                  options={nonPrimaryAttributes}
-                  getOptionLabel={(option) => option.name}
-                  getOptionSelected={(option, attribute) => option.id === attribute.id}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Primary"
-                      margin="normal"
-                      helperText="Make a selection to add a new primary attribute"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  )}
-                  onChange={this.handleChangePrimaryEmpty}
-                />
-              </ListItem>
-            </Box>
-            {/* END new Primary item */}
             {primaryAttributes.map((primary) => {
+              const isNewPrimary = this.isNewPrimary(primary);
               return (
                 <Box key={primary.id} mb={1}>
                   {/* START Primary Attribute Display */}
@@ -100,20 +79,25 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
                       onChange={this.handleChangePrimaryProvider(primary)}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        disabled={this.isNewPrimary(primary)}
-                        onClick={this.handleDeleteAttributeProvider(primary)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <Tooltip title={`${!isNewPrimary ? "Cannot delete existing associations" : ""}`}>
+                        <span>
+                          <IconButton
+                            edge="end"
+                            aria-label="delete"
+                            disabled={!isNewPrimary}
+                            onClick={this.handleDeleteAttributeProvider(primary)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </ListItemSecondaryAction>
                   </ListItem>
                   {/* END Primary Attribute Display */}
                   {/* START Secondary Attributes Display */}
                   <List disablePadding>
                     {primary.secondaryAttributes!.map((secondary) => {
+                      const isNewSecondary = this.isNewSecondary(primary, secondary);
                       return (
                         <ListItem key={secondary.id} className="compoundAttributeEditor-secondary" dense={true}>
                           <Autocomplete
@@ -133,14 +117,18 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
                             onChange={this.handleChangeSecondaryProvider(primary, secondary)}
                           />
                           <ListItemSecondaryAction>
-                            <IconButton
-                              edge="end"
-                              aria-label="delete"
-                              disabled={!this.isNewSecondary(primary, secondary)}
-                              onClick={this.handleDeleteAttributeProvider(primary, secondary)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                            <Tooltip title={`${!isNewSecondary ? "Cannot delete existing associations" : ""}`}>
+                              <span>
+                                <IconButton
+                                  edge="end"
+                                  aria-label="delete"
+                                  disabled={!isNewSecondary}
+                                  onClick={this.handleDeleteAttributeProvider(primary, secondary)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
                           </ListItemSecondaryAction>
                         </ListItem>
                       );
@@ -170,6 +158,29 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
                 </Box>
               );
             })}
+            {/* START new Primary item */}
+            <Box pb={3}>
+              <ListItem className="compoundAttributeEditor-primary-empty" dense={true}>
+                <Autocomplete
+                  fullWidth
+                  disableClearable
+                  options={nonPrimaryAttributes}
+                  getOptionLabel={(option) => option.name}
+                  getOptionSelected={(option, attribute) => option.id === attribute.id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Primary"
+                      margin="normal"
+                      helperText="Make a selection to add a new primary attribute"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  )}
+                  onChange={this.handleChangePrimaryEmpty}
+                />
+              </ListItem>
+            </Box>
+            {/* END new Primary item */}
           </List>
         </CardContent>
       </Card>
@@ -181,7 +192,7 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
       (attribute) => attribute.secondaryAttributes
     );
     const primaryIndex: number = initialPrimaryAttributes.findIndex((item) => item.id === primary.id);
-    return primaryIndex > -1;
+    return primaryIndex === -1;
   }
 
   isNewSecondary(primary: AttributeListing, secondary: AttributeListing): boolean {
