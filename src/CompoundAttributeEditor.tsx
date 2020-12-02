@@ -37,16 +37,36 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
       }
     });
 
-    const primaryAttributes: AttributeListing[] = attributes.filter(
-      (attribute: AttributeListing) => attribute.secondaryAttributes
+    const primaryAttributes: AttributeListing[] = attributes.filter((attribute: AttributeListing) =>
+      Array.isArray(attribute.secondaryAttributes)
     );
 
     console.log("primary:", attributes);
     const nonPrimaryAttributes: AttributeListing[] = attributes.filter(
-      (attribute: AttributeListing) => !attribute.secondaryAttributes
+      (attribute: AttributeListing) => !Array.isArray(attribute.secondaryAttributes)
     );
 
+    const secondaryAttributes: Record<string, AttributeListing> = {};
+    attributes.forEach((attribute: AttributeListing) => {
+      if (Array.isArray(attribute.secondaryAttributes)) {
+        attribute.secondaryAttributes.forEach((item) => {
+          if (secondaryAttributes[item.id]) {
+            return;
+          } else {
+            secondaryAttributes[item.id] = item;
+          }
+        });
+      }
+    });
+
+    const notPrimaryOrSecondary = nonPrimaryAttributes.filter((item) => {
+      return !secondaryAttributes[item.id];
+    });
+
+    console.log("non primary and non secondary", notPrimaryOrSecondary);
+
     console.log("primary:", attributes);
+    console.log("secondary attributes:", secondaryAttributes);
 
     return (
       <Card>
@@ -66,7 +86,7 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
                       className="compoundAttributeEditor-primarySelect"
                       disableClearable
                       fullWidth
-                      options={this.isNewPrimary(primary) ? [primary] : [primary, ...nonPrimaryAttributes]}
+                      options={[primary, ...notPrimaryOrSecondary]}
                       disabled={primary.secondaryAttributes && primary.secondaryAttributes.length !== 0}
                       id={primary.id}
                       key={primary.id}
@@ -164,7 +184,7 @@ export class CompoundAttributeEditor extends React.Component<CompoundAttributeEd
                 <Autocomplete
                   fullWidth
                   disableClearable
-                  options={nonPrimaryAttributes}
+                  options={notPrimaryOrSecondary}
                   getOptionLabel={(option) => option.name}
                   getOptionSelected={(option, attribute) => option.id === attribute.id}
                   renderInput={(params) => (
